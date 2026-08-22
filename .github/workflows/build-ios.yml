@@ -14,9 +14,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Ninja & CMake
-        run: brew install cmake ninja
-
+      - name: Install MoltenVK & Build Tools
+        run: |
+          brew install cmake ninja molten-vk vulkan-headers
+          
       - name: Generate Xcode / CMake Build Files
         run: |
           mkdir build-ios && cd build-ios
@@ -24,7 +25,8 @@ jobs:
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_SYSROOT=iphoneos \
             -DCMAKE_OSX_ARCHITECTURES="arm64" \
-            -DVITA3K_FORCE_PORTABLE=ON
+            -DVITA3K_FORCE_PORTABLE=ON \
+            -DMOLTENVK_FRAMEWORK_DIR="$(brew --prefix molten-vk)/libexec/frameworks"
 
       - name: Build App Payload
         run: |
