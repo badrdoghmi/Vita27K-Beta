@@ -14,10 +14,17 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install MoltenVK & Build Tools
+      - name: Install Build Tools
+        run: brew install cmake ninja
+
+      - name: Setup MoltenVK iOS Framework
         run: |
-          brew install cmake ninja molten-vk vulkan-headers
-          
+          mkdir -p MoltenVK-SDK
+          curl -L https://github.com/KhronosGroup/MoltenVK/releases/download/v1.2.8/MoltenVK-ios.xcframework.zip -o moltenvk.zip || true
+          if [ -f moltenvk.zip ]; then
+            unzip -q moltenvk.zip -d MoltenVK-SDK
+          fi
+
       - name: Generate Xcode / CMake Build Files
         run: |
           mkdir build-ios && cd build-ios
@@ -26,7 +33,7 @@ jobs:
             -DCMAKE_OSX_SYSROOT=iphoneos \
             -DCMAKE_OSX_ARCHITECTURES="arm64" \
             -DVITA3K_FORCE_PORTABLE=ON \
-            -DMOLTENVK_FRAMEWORK_DIR="$(brew --prefix molten-vk)/libexec/frameworks"
+            -DCMAKE_FRAMEWORK_PATH="${{ github.workspace }}/MoltenVK-SDK"
 
       - name: Build App Payload
         run: |
