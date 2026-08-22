@@ -15,8 +15,18 @@ jobs:
           submodules: recursive
 
       - name: Install Build Tools
+        run: brew install cmake ninja
+
+      - name: Build Boost for iOS
         run: |
-          brew install cmake ninja boost
+          # Download and build Boost for iOS
+          curl -L https://github.com/faithfracture/Boost-for-iOS/releases/download/1.81.0/boost-1.81.0-ios-arm64.tar.gz -o boost.tar.gz
+          tar -xzf boost.tar.gz
+          mv boost boost-ios
+          # Set environment variable
+          echo "BOOST_ROOT=${{ github.workspace }}/boost-ios" >> $GITHUB_ENV
+          echo "Boost_ROOT=${{ github.workspace }}/boost-ios" >> $GITHUB_ENV
+          echo "Boost_INCLUDE_DIR=${{ github.workspace }}/boost-ios/include/boost-1_81" >> $GITHUB_ENV
 
       - name: Fetch and Build MoltenVK Framework
         run: |
@@ -38,9 +48,8 @@ jobs:
             -DCMAKE_OSX_ARCHITECTURES="arm64" \
             -DVITA3K_FORCE_PORTABLE=ON \
             -DMOLTENVK_FRAMEWORK="${{ github.workspace }}/mvk-out/MoltenVK.framework" \
-            -DUSE_SYSTEM_BOOST=ON \
-            -DBoost_ROOT=$(brew --prefix boost) \
-            -DBoost_INCLUDE_DIR=$(brew --prefix boost)/include \
+            -DBOOST_ROOT="${{ github.workspace }}/boost-ios" \
+            -DBoost_INCLUDE_DIR="${{ github.workspace }}/boost-ios/include/boost-1_81" \
             -DBoost_NO_SYSTEM_PATHS=ON
 
       - name: Build App Payload
