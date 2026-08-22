@@ -32,10 +32,12 @@ jobs:
       - name: Run Aider Fix with Gemini
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           aider --yes \
             --model gemini/gemini-2.5-flash \
-            --message "Fix the issue described here: ${{ github.event.issue.title }}. ${{ github.event.issue.body }}" \
+            --message "Fix the issue described here: $ISSUE_TITLE. $ISSUE_BODY" \
             --auto-commits
 
       - name: Create Pull Request
