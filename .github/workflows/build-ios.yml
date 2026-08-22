@@ -1,6 +1,8 @@
-name: Vita3K iOS Automated Builder
+name: Build iOS IPA
 
 on:
+  push:
+    branches: [ master, main ]
   workflow_dispatch:
 
 jobs:
@@ -12,38 +14,31 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install Tools & MoltenVK
-        run: brew install cmake ninja molten-vk
+      - name: Setup Ninja & CMake
+        run: brew install cmake ninja
 
-      - name: Configure CMake for iOS
+      - name: Generate Xcode / CMake Build Files
         run: |
-          mkdir build && cd build
+          mkdir build-ios && cd build-ios
           cmake .. -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
             -DCMAKE_OSX_ARCHITECTURES="arm64" \
-            -DCMAKE_OSX_SYSROOT="iphoneos" \
-            -DUSE_VULKAN=ON \
-            -DMOLTENVK_FRAMEWORK="$(brew --prefix molten-vk)/lib/MoltenVK.xcframework"
+            -DVITA3K_FORCE_PORTABLE=ON
 
-      - name: Compile Binary
+      - name: Build App Payload
         run: |
-          cd build
-          xcodebuild -project Vita3K.xcodeproj \
-                     -scheme Vita3K \
-                     -sdk iphoneos \
-                     -configuration Release \
-                     CODE_SIGN_ALLOWED=NO \
-                     BUILD_DIR=../build_output
+          cd build-ios
+          xcodebuild -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
 
-      - name: Create Signed Payload
+      - name: Package into IPA
         run: |
           mkdir -p Payload
-          cp -r build_output/Release-iphoneos/Vita3K.app Payload/
-          cp iOS_Entitlements.plist Payload/Vita3K.app/
-          zip -r Vita3K-iOS.ipa Payload
+          cp -r build-ios/Release-iphoneos/*.app Payload/ 2>/dev/null || cp -r build-ios/*.app Payload/
+          zip -r Vita27K-Beta.ipa Payload
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Vita3K-iOS-IPA
-          path: Vita3K-iOS.ipa
+          name: Vita27K-Beta-iOS
+          path: Vita27K-Beta.ipa
