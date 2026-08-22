@@ -15,35 +15,7 @@ jobs:
           submodules: recursive
 
       - name: Install Build Tools
-        run: |
-          brew install cmake ninja
-
-      - name: Build Boost for iOS from source
-        run: |
-          # Download Boost source
-          curl -L https://archives.boost.io/release/1.81.0/source/boost_1_81_0.tar.gz -o boost.tar.gz
-          tar -xzf boost.tar.gz
-          mv boost_1_81_0 boost-ios
-          cd boost-ios
-          # Bootstrap and build for iOS
-          ./bootstrap.sh
-          ./b2 -j$(sysctl -n hw.ncpu) \
-            toolset=clang \
-            target-os=iphone \
-            architecture=arm \
-            abi=aapcs \
-            link=static \
-            runtime-link=static \
-            variant=release \
-            --with-filesystem \
-            --with-system \
-            --with-thread \
-            --with-date_time \
-            --with-chrono \
-            --with-atomic \
-            --prefix=${{ github.workspace }}/boost-install \
-            install
-          echo "BOOST_ROOT=${{ github.workspace }}/boost-install" >> $GITHUB_ENV
+        run: brew install cmake ninja boost
 
       - name: Fetch and Build MoltenVK Framework
         run: |
@@ -51,7 +23,6 @@ jobs:
           cd external/MoltenVK
           ./fetchDependencies --ios
           make ios
-          # Locate the built framework and copy it to a known directory
           MVK_PATH=$(find Package -name "MoltenVK.framework" -type d | head -n 1)
           mkdir -p ${{ github.workspace }}/mvk-out
           cp -R "$MVK_PATH" ${{ github.workspace }}/mvk-out/
@@ -64,11 +35,7 @@ jobs:
             -DCMAKE_OSX_SYSROOT=iphoneos \
             -DCMAKE_OSX_ARCHITECTURES="arm64" \
             -DVITA3K_FORCE_PORTABLE=ON \
-            -DMOLTENVK_FRAMEWORK="${{ github.workspace }}/mvk-out/MoltenVK.framework" \
-            -DBOOST_ROOT="${{ github.workspace }}/boost-install" \
-            -DBoost_INCLUDE_DIR="${{ github.workspace }}/boost-install/include/boost-1_81" \
-            -DBoost_LIBRARY_DIR="${{ github.workspace }}/boost-install/lib" \
-            -DBoost_NO_SYSTEM_PATHS=ON
+            -DMOLTENVK_FRAMEWORK="${{ github.workspace }}/mvk-out/MoltenVK.framework"
 
       - name: Build App Payload
         run: |
