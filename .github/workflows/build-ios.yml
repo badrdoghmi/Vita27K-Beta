@@ -1,0 +1,49 @@
+name: Vita3K iOS Automated Builder
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-14
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Tools & MoltenVK
+        run: brew install cmake ninja molten-vk
+
+      - name: Configure CMake for iOS
+        run: |
+          mkdir build && cd build
+          cmake .. -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_ARCHITECTURES="arm64" \
+            -DCMAKE_OSX_SYSROOT="iphoneos" \
+            -DUSE_VULKAN=ON \
+            -DMOLTENVK_FRAMEWORK="$(brew --prefix molten-vk)/lib/MoltenVK.xcframework"
+
+      - name: Compile Binary
+        run: |
+          cd build
+          xcodebuild -project Vita3K.xcodeproj \
+                     -scheme Vita3K \
+                     -sdk iphoneos \
+                     -configuration Release \
+                     CODE_SIGN_ALLOWED=NO \
+                     BUILD_DIR=../build_output
+
+      - name: Create Signed Payload
+        run: |
+          mkdir -p Payload
+          cp -r build_output/Release-iphoneos/Vita3K.app Payload/
+          cp iOS_Entitlements.plist Payload/Vita3K.app/
+          zip -r Vita3K-iOS.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vita3K-iOS-IPA
+          path: Vita3K-iOS.ipa
