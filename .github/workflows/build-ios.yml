@@ -22,7 +22,7 @@ jobs:
           git clone --depth 1 https://github.com/KhronosGroup/MoltenVK.git external/MoltenVK
           cd external/MoltenVK
           ./fetchDependencies --ios
-          xcodebuild -project MoltenVKPackaging.xcodeproj -scheme "MoltenVK" -sdk iphoneos -configuration Release build
+          make ios
 
       - name: Generate Xcode / CMake Build Files
         run: |
