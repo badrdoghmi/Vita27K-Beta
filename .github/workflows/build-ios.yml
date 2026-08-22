@@ -17,9 +17,12 @@ jobs:
       - name: Install Build Tools
         run: brew install cmake ninja
 
-      - name: Fetch MoltenVK Source
+      - name: Fetch and Build MoltenVK Framework
         run: |
           git clone --depth 1 https://github.com/KhronosGroup/MoltenVK.git external/MoltenVK
+          cd external/MoltenVK
+          ./fetchDependencies --ios
+          xcodebuild -project MoltenVKPackaging.xcodeproj -scheme "MoltenVK-iOS" -configuration Release build
 
       - name: Generate Xcode / CMake Build Files
         run: |
@@ -29,7 +32,7 @@ jobs:
             -DCMAKE_OSX_SYSROOT=iphoneos \
             -DCMAKE_OSX_ARCHITECTURES="arm64" \
             -DVITA3K_FORCE_PORTABLE=ON \
-            -DMOLTENVK_DIR="${{ github.workspace }}/external/MoltenVK"
+            -DCMAKE_FRAMEWORK_PATH="${{ github.workspace }}/external/MoltenVK/Package/Release/MoltenVK/framework"
 
       - name: Build App Payload
         run: |
