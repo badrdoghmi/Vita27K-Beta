@@ -175,7 +175,7 @@ option(VITA3K_FORCE_CUSTOM_BOOST "Force Vita3K build process to use the Boost ve
 option(VITA3K_FORCE_SYSTEM_BOOST "Force Vita3K build process to use the Boost version in the system and CMake's default paths and ignore the Boost version included with Vita3K" OFF)
 
 # Boost modules to be found by CMake
-set(BOOST_MODULES_TO_FIND filesystem system thread date_time chrono atomic)
+set(BOOST_MODULES_TO_FIND filesystem system thread date_time chrono)
 
 # If build process isn't set to forcefully use system Boost
 macro(get_boost)
@@ -183,6 +183,7 @@ macro(get_boost)
 	if(DEFINED ENV{GITHUB_ACTIONS})
 		message(STATUS "GitHub Actions detected - using system Boost")
 		set(Boost_USE_STATIC_LIBS ON)
+		set(Boost_NO_WARN_NEW_VERSIONS 1)
 		find_package(Boost 1.81 COMPONENTS ${BOOST_MODULES_TO_FIND} REQUIRED)
 		return()
 	endif()
