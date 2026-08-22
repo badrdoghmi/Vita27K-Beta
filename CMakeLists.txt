@@ -24,9 +24,22 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 13.3)
 # workaround for SDL due to cmake bug
 # https://github.com/libsdl-org/SDL/issues/6454
 # https://gitlab.kitware.com/cmake/cmake/-/issues/24104
-if(APPLE)
-    enable_language(OBJC)
+if(APPLE AND IOS)
+    set(CMAKE_SYSTEM_NAME iOS)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0")
+    add_definitions(-D__IOS__ -DVK_USE_PLATFORM_IOS_MVK)
+    
+    find_library(MOLTENVK_FRAMEWORK MoltenVK REQUIRED)
+    find_library(METAL_FRAMEWORK Metal REQUIRED)
+    find_library(QUARTZCORE_FRAMEWORK QuartzCore REQUIRED)
+    
+    list(APPEND VITA3K_LIBRARIES 
+        ${MOLTENVK_FRAMEWORK} 
+        ${METAL_FRAMEWORK} 
+        ${QUARTZCORE_FRAMEWORK}
+    )
 endif()
+
 
 if(ANDROID)
 	set(CMAKE_SYSROOT "")
