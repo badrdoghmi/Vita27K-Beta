@@ -1,0 +1,46 @@
+name: AI Bug Fixer
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  fix-issue:
+    if: github.event.label.name == 'autofix'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Aider
+        run: pip install aider-chat
+
+      - name: Run Aider Fix with Gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          aider --yes \
+            --model gemini/gemini-2.5-flash \
+            --message "Fix the issue described here: ${{ github.event.issue.title }}. ${{ github.event.issue.body }}" \
+            --auto-commits
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "fix: automatically solved issue #${{ github.event.issue.number }}"
+          title: "AI Fix for Issue #${{ github.event.issue.number }}"
+          body: "This PR was automatically generated to address issue #${{ github.event.issue.number }}."
+          branch: "ai-fix-${{ github.event.issue.number }}"
