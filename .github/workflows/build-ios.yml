@@ -19,19 +19,20 @@ jobs:
         
     - name: Install dependencies via Homebrew
       run: |
-        brew install boost cmake ninja
+        brew install boost cmake
         
-    - name: Set up MoltenVK
+    - name: Clone and build MoltenVK
       run: |
         git clone https://github.com/KhronosGroup/MoltenVK.git
         cd MoltenVK
         make ios
-        # Find and copy framework to predictable location
+        # Find and copy framework
         FRAMEWORK_PATH=$(find . -name "MoltenVK.framework" -type d | head -n 1)
         mkdir -p ${{ github.workspace }}/mvk-out
         cp -R "$FRAMEWORK_PATH" ${{ github.workspace }}/mvk-out/
+        echo "MOLTENVK_FRAMEWORK=${{ github.workspace }}/mvk-out/MoltenVK.framework" >> $GITHUB_ENV
         
-    - name: Configure CMake
+    - name: Configure CMake for iOS
       run: |
         mkdir -p build-ios
         cd build-ios
@@ -40,32 +41,37 @@ jobs:
           -DCMAKE_OSX_SYSROOT=iphoneos \
           -DCMAKE_OSX_ARCHITECTURES="arm64" \
           -DVITA3K_FORCE_PORTABLE=ON \
-          -DMOLTENVK_FRAMEWORK="${{ github.workspace }}/mvk-out/MoltenVK.framework" \
+          -DMOLTENVK_FRAMEWORK="${{ env.MOLTENVK_FRAMEWORK }}" \
           -DBoost_ROOT=$(brew --prefix boost) \
-          -DBoost_NO_SYSTEM_PATHS=ON \
-          -DBoost_NO_BOOST_CMAKE=ON
+          -DBoost_INCLUDE_DIR=$(brew --prefix boost)/include \
+          -DBoost_NO_SYSTEM_PATHS=ON
         
-    - name: Build Xcode project
+    - name: Build app
       run: |
         cd build-ios
         xcodebuild -project Vita3K.xcodeproj \
           -scheme Vita3K \
           -configuration Release \
           -sdk iphoneos \
+          -arch arm64 \
           CODE_SIGNING_ALLOWED=NO \
           GCC_GENERATE_DEBUGGING_SYMBOLS=NO \
           OTHER_CFLAGS="-O3" \
           OTHER_CPLUSPLUSFLAGS="-O3" \
           build
         
-    - name: Create IPA
+    - name: Create Payload folder and copy app
       run: |
         mkdir -p Payload
         cp -R build-ios/Release-iphoneos/Vita3K.app Payload/
+        
+    - name: Create IPA
+      run: |
         zip -r Vita3K.ipa Payload
         
-    - name: Upload IPA artifact
+    - name: Upload IPA
       uses: actions/upload-artifact@v4
       with:
-        name: Vita3K-iOS-IPA
+        name: Vita3K-iOS
         path: Vita3K.ipa
+        retention-days: 30
